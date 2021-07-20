@@ -5,6 +5,23 @@
 
 // See the score of a given position
 // @param position: the position to evaluate
+
+Connect4Solver::Connect4Solver()
+{
+    for (int i = 0; i < Position::WIDTH; i++)
+    {
+        // Get to central element
+        heuristic[i] = Position::WIDTH / 2;
+        if (i % 2 == 0)
+        {
+            heuristic[i] += (i + 1) / 2;
+        }
+        else
+        {
+            heuristic[i] -= (i + 1) / 2;
+        }
+    }
+}
 void Connect4Solver::get_value(const char *position)
 {
     Position pos;
@@ -88,7 +105,7 @@ int Connect4Solver::negamax_with_pruning(const Position &P, int alpha, int beta)
     if (beta > max)
     {
         beta = max;
-        // Since we changed the window, see if [alpha,beta] is empty or not, if it is then return beta 
+        // Since we changed the window, see if [alpha,beta] is empty or not, if it is then return beta
         // since it is max score we can get
         if (alpha >= beta)
         {
@@ -96,7 +113,9 @@ int Connect4Solver::negamax_with_pruning(const Position &P, int alpha, int beta)
         }
     }
     // Go over possible moves
-    for (int x = 0; x < Position::WIDTH; x++)
+    for (int y = 0; y < Position::WIDTH; y++)
+    {
+        int x = heuristic[y];
         if (P.canPlay(x))
         {
             // We are the maximizing player
@@ -119,6 +138,6 @@ int Connect4Solver::negamax_with_pruning(const Position &P, int alpha, int beta)
                 alpha = score;
             }
         }
-    // We return the best score we have seen so far.
+    } // We return the best score we have seen so far.
     return alpha;
 }

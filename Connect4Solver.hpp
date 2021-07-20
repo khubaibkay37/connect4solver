@@ -4,11 +4,13 @@
 
 class Connect4Solver
 {
+private:
+    int heuristic[7];
 
 public:
-    static void solve(const char* starting_position);
-    static void get_value(const char* starting_position);
-    static int negamax(const Position &P);
-    static int negamax_with_pruning(const Position &P,int alpha, int beta);
+    Connect4Solver();
+    void solve(const char *starting_position);
+    void get_value(const char *starting_position);
+    int negamax(const Position &P);
+    int negamax_with_pruning(const Position &P, int alpha, int beta);
 };
-
