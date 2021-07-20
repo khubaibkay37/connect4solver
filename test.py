@@ -1,5 +1,5 @@
 
-from cpp_api import get_value_of_position
+from cpp_api import get_score_of_position
 def test_file(filename):
     """
     Reads the file which contains testcases in each line
@@ -16,14 +16,17 @@ def test_file(filename):
     with open(filename) as test_case_file:
         testcases = test_case_file.readlines()
         
-    for testcase in testcases:
+    for i,testcase in enumerate(testcases):
         position , position_score = (testcase.strip().split(" "))
         position_score = int(position_score)
-        result = get_value_of_position(position,"value") == position_score
+        result = get_score_of_position(position) == position_score
         if not result:
             return False
+        if i%10 == 0:
+            print("Testcase {} passed".format(i))
+        # print(result)
     return True 
 
-if __name__ == "main":
-    testcase_filename = "Test_L3_R1"
+if __name__ == "__main__":
+    testcase_filename = "Test_L2_R1"
     print(test_file(testcase_filename))
