@@ -10,9 +10,9 @@ private:
     unsigned int moves;
 
 public:
-    Position(/* args */);
+    Position();
     bool canPlay(int col) const;
-    bool play(int col);
+    void play(int col);
 
     unsigned int play(const char *seq);
     bool valid_xy(int x, int y) const;

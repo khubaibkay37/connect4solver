@@ -2,17 +2,21 @@
 #include "Position.hpp"
 #include <iostream>
 
-void Connect4Solver::getvalue(const char *starting_position)
+// See the score of a given position
+// @param position: the position to evaluate
+void Connect4Solver::get_value(const char *position)
 {
     Position pos;
-    pos.play(starting_position);
+    pos.play(position);
     std::cout << negamax(pos) << std::endl;
 }
 
-void Connect4Solver::solve(const char *starting_position)
+// Prints the best posible move for a given position
+// @param position: the position to evaluate
+void Connect4Solver::solve(const char *position)
 {
     Position pos;
-    pos.play(starting_position);
+    pos.play(position);
     int bestmove = -1;
     int bestscore = -1000;
     for (int i = 0; i < 7; i++)
@@ -21,7 +25,8 @@ void Connect4Solver::solve(const char *starting_position)
         {
             Position test(pos);
             test.play(i);
-            int score = negamax(pos);
+            // See value for us
+            int score = -negamax(pos);
             if (score > bestscore)
             {
                 bestscore = score;

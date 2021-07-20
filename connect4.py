@@ -1,9 +1,62 @@
+from helper import is_winning_move
 import pygame
-from test import get_cpp_opinion
-# If you want to start the game off from somewhere
-starting = "555422433323451176441511577777"
+from cpp_api import get_best_move,get_score_of_position
+# from helper import is_winning_move
 
-# Each sublist represents a column. There are 7 columns in total of size 6 each. 0th index represent bottom of the column
+
+def doMove(state,height,col):
+    """
+    Function does the move of inserting in a particular column
+
+    Args:
+        state [nested list]: Nested list representing current board position
+        height [list]: A list of integers representing the number of elements in each column
+        col [int] : Column to insert into
+    """    
+    global current_player,current_actions
+    
+    # Add the current action to the list of actions and make col 0 indexed
+    current_actions+= f"{col}"
+    col -=1
+
+    if height[col] < 6:
+        row = height[col]
+        state[col][row] = current_player
+        current_player = "X" if current_player == "O" else "O"
+        height[col] += 1
+    else:
+        print("Column is full, move is invalid")
+
+def start_from_position(position,state,height):
+    """
+    Updates state and height to the one at the 
+    specified position of the game
+
+    Args:
+        position [string]: position that we want the board to be at
+        state [nested list]: Nested list representing current board position
+        height [list]: A list of integers representing the number of elements in each column
+    """    
+    for move in position:
+        doMove(state,height,int(move))
+
+
+
+# -------Initialization Start--------------------
+
+# Initialize CONSTANTS 
+
+GRAY = (155, 155, 155)
+RED = (255,0,0) 
+BLUE = (0,0,255)
+EMPTY = (50,50,50)
+WHITE = (255,255,255)
+X = 30
+Y = 100
+
+
+# Initialize parameters
+
 state = [["","","","","",""],
           ["","","","","",""],
           ["","","","","",""],
@@ -11,85 +64,69 @@ state = [["","","","","",""],
           ["","","","","",""],
           ["","","","","",""],
           ["","","","","",""]]
-# How many elements are in each column
 height = [0] * 7
-# your voice is lagging
-def doMove(movestring,state,height,col = -1,type = "one"):
-    global current,currentmoves
-    # Update history of our current moves
-    currentmoves+= f"{movestring}"
-    for move in movestring:
-        # If we are doing a lot of moves then we need to read the current move just need to make it 0 indexed (-1)
-        if type != "one":
-            col = int(move) - 1
-        else:
-            col -=1
-        if height[col] < 6:
-            row = height[col]
-            state[col][row] = current
-            current = "X" if current == "O" else "O"
-            height[col] += 1
-currentmoves = ""
-current = "X"
-doMove("75662564375666511575212332122171447733",state,height,type="")
-print(state)
+current_actions = ""
+current_player = "X"
+
+starting_position = "2252576253462244111563365343671351441"
+
+start_from_position(starting_position,state,height)
+    
+# -------Initialization End----------------------
+
+# --------------- Pygame init start ---------------
 pygame.init()
 screen = pygame.display.set_mode((700, 700))
-done = False
-mode = ""
-while not done:
+game_over = False
+
+# --------------- Pygame init end ---------------
+
+
+# --------------- Pygame loop start ---------------
+while not game_over:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            done = True
+            game_over = True
+        
+        # Some key is being pressed
         if event.type == pygame.KEYDOWN:
+            """
+            F: Give the best possible move suggestion
+            1-7: Insert in column 1-7 depending on the key pressed
+            """
             if event.key == pygame.K_f:
-                print(currentmoves)
-                if current == "X":
-                    maximize = -50
-                    bestmove = -1
-                    for i in range(7):
-                        if height[i]<6:
-                            val = get_cpp_opinion(currentmoves+f"{i+1}")
-                            if maximize < val:
-                                maximize = val
-                                bestmove = i+1
+                best_move = get_best_move(current_actions)
+                if is_winning_move(best_move-1,height,current_player,state):
+                    score_of_best_move = "Doesn't matter you win"
                 else:
-                    minimize = 50
-                    bestmove = -1
-                    for i in range(7):
-                        if height[i]<6:
-                            val = get_cpp_opinion(currentmoves+f"{i+1}")
-                            if minimize > val:
-                                minimize = val
-                                bestmove = i+1
-                print(bestmove)
+                    score_of_best_move =- get_score_of_position(current_actions+f"{best_move}")
+                print(f"Best Move is {best_move} with score {score_of_best_move}")
+            
+            # Insert in column 1-7 depending on the key pressed
             mapping = {pygame.K_1 : 1, pygame.K_2 : 2, pygame.K_3 : 3, pygame.K_4 : 4, pygame.K_5 : 5, pygame.K_6 : 6, pygame.K_7 : 7}
             if event.key in mapping:
                 col = mapping[event.key] 
-                doMove(f"{col}",state,height,col)
-                    # if height[col] < 6:
-                    #     row = -height[col]-1
-                    #     state[row][col] = current
-                    #     current = "X" if current == "O" else "O"
-                    #     height[col] += 1
+                if height[col-1] < 6:
+                    doMove(state,height,col)
+                else:
+                    print("Invalid move")   
 
-    grey = (155, 155, 155)
-    Red = (255,0,0) 
-    Blue = (0,0,255)
-    empty = (50,50,50)
-    white = (255,255,255)
-    color = empty
-    x = 30
-    y = 100
-    # Draw stuff 
+
+
+    color = EMPTY
+
+    # ------ Draw the board Start ------
 
     for col_index,col in enumerate(state):
         for row_ind,value in enumerate(col):
-            pygame.draw.rect(screen, grey, [x+(80*col_index), y+(80*(len(col)-1-row_ind)), 70, 70]) 
+            pygame.draw.rect(screen, GRAY, [X+(80*col_index), Y+(80*(len(col)-1-row_ind)), 70, 70]) 
             if value == "X":
-                color = Red
+                color = RED
             elif value == "O":
-                color = Blue
-            pygame.draw.ellipse(screen, color, [x+(80*col_index), y+(80*(len(col)-1-row_ind)), 70, 70]) 
-            color = empty
+                color = BLUE
+            pygame.draw.ellipse(screen, color, [X+(80*col_index), Y+(80*(len(col)-1-row_ind)), 70, 70]) 
+            color = EMPTY
     pygame.display.flip()
+
+    # ------ Draw the board End ------
+# --------------- Pygame loop end ---------------

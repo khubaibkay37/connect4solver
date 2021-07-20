@@ -1,25 +1,29 @@
-import subprocess
-def get_cpp_opinion(starting_position,mode = "value"):
 
-    filename = "a.exe"
-    proc = subprocess.Popen([f"./{filename}", mode,starting_position],stdout=subprocess.PIPE)
-    value = proc.stdout.read().decode('utf-8').strip()
-    return (int(value))
-
-
-
+from cpp_api import get_value_of_position
 def test_file(filename):
-    # read file line by line
-    with open(filename) as f:
-        for line in f:
-            starting,link = (line.strip().split(" "))
-            link = int(link)
-            result = (get_cpp_opinion(starting,"value") == link)
-            if not result:
-                return False
+    """
+    Reads the file which contains testcases in each line
+    of the format <position> <score of position> and calls
+    the C++ api to see if the api gets the score correctly.
+    It returns whether the API is working properly or not.
+
+    Args:
+        filename [string]: link to the file containing testcases
+
+    Returns:
+        [Boolean]: Whether all testcases pass or not
+    """
+    with open(filename) as test_case_file:
+        testcases = test_case_file.readlines()
+        
+    for testcase in testcases:
+        position , position_score = (testcase.strip().split(" "))
+        position_score = int(position_score)
+        result = get_value_of_position(position,"value") == position_score
+        if not result:
+            return False
     return True 
-            #print(line.strip().split(",")[1])
-            # print(int(line.strip().split(" ")[1]) == get_cpp_opinion(int(line.strip().split(" ")[0])))
 
-
-print(test_file("Test_L3_R1"))
+if __name__ == "main":
+    testcase_filename = "Test_L3_R1"
+    print(test_file(testcase_filename))
