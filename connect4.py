@@ -45,14 +45,18 @@ def start_from_position(position,state,height):
 # -------Initialization Start--------------------
 
 # Initialize CONSTANTS 
-
+white = (255, 255, 255)
+green = (0, 255, 0)
+blue = (0, 0, 128)
 GRAY = (155, 155, 155)
 RED = (255,0,0) 
 BLUE = (0,0,255)
 EMPTY = (50,50,50)
 WHITE = (255,255,255)
+BLACK = (0,0,0)
 X = 30
 Y = 100
+display_surface = pygame.display.set_mode((X, Y))
 
 
 # Initialize parameters
@@ -68,7 +72,7 @@ height = [0] * 7
 current_actions = ""
 current_player = "X"
 
-starting_position = "2252576253462244111563365343671351441"
+starting_position = "22525762534622441115633613456347"
 
 start_from_position(starting_position,state,height)
     
@@ -83,7 +87,13 @@ game_over = False
 
 
 # --------------- Pygame loop start ---------------
+end = False
+status_text = 'Game Start'
 while not game_over:
+
+    #Refreshes the screen
+    screen.fill(BLACK)
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             game_over = True
@@ -106,16 +116,24 @@ while not game_over:
             mapping = {pygame.K_1 : 1, pygame.K_2 : 2, pygame.K_3 : 3, pygame.K_4 : 4, pygame.K_5 : 5, pygame.K_6 : 6, pygame.K_7 : 7}
             if event.key in mapping:
                 col = mapping[event.key] 
+
+                #if the played moves is a winning move set the winner
+                if is_winning_move(col-1,height,current_player,state):
+                    if current_player == "X":
+                        status_text = "Red win"
+                    else:
+                        status_text = "Blue win"
+                    end = True
+
                 if height[col-1] < 6:
                     doMove(state,height,col)
                 else:
                     print("Invalid move")   
 
-
-
     color = EMPTY
 
     # ------ Draw the board Start ------
+    
 
     for col_index,col in enumerate(state):
         for row_ind,value in enumerate(col):
@@ -126,6 +144,22 @@ while not game_over:
                 color = BLUE
             pygame.draw.ellipse(screen, color, [X+(80*col_index), Y+(80*(len(col)-1-row_ind)), 70, 70]) 
             color = EMPTY
+    #if the game is not ended set the text to current player's turn
+    if end == False:
+        if current_player == "X":
+            status_text = "Red's turn"
+        else:
+            status_text = "Blue's turn"
+    
+    #---------Displays the text---------    
+    pygame.display.set_caption('Show Text')
+    font = pygame.font.Font('freesansbold.ttf', 70)
+    text = font.render(status_text, True, BLACK, GRAY)
+    textRect = text.get_rect()
+    textRect.center = (300, 50)
+    display_surface.blit(text, textRect)
+    if end == False:
+        status_text = None
     pygame.display.flip()
 
     # ------ Draw the board End ------
