@@ -1,65 +1,67 @@
+
 #include "Position.hpp"
 #include <iostream>
 
 // Default constructor for Position
-Position::Position() : board{0}, height{0}, moves{0}
-{
-}
+Position::Position() : current_position{0}, mask{0}, moves{0} {}
 
 // Sees whether it is possible to insert in the given column or not
 // @param column: the column to check
 // @return: true if it is possible to insert in the given column, false otherwise
 bool Position::canPlay(int col) const
 {
-    return height[col] < HEIGHT;
+    return (mask & top_mask(col)) == 0;
 }
 
 // Play a piece in the given column
 // @param column: the column to play in
 void Position::play(int col)
 {
-    if (canPlay(col))
-    {
-        board[col][height[col]] = 1 + moves % 2;
-        moves++;
-        height[col]++;
-    }
-    else
-    {
-        std::cout << "Invalid move" << std::endl;
-        exit(1);
-    }
+    current_position ^= mask;
+    mask |= mask + bottom_mask(col);
+    moves++;
+    // if (canPlay(col))
+    // {
+    //     board[col][height[col]] = 1 + moves % 2;
+    //     moves++;
+    //     height[col]++;
+    // }
+    // else
+    // {
+    //     std::cout << "Invalid move" << std::endl;
+    //     exit(1);
+    // }
 }
 
-// Removes the piece in the given column
-// @param column: the column to remove from
-void Position::undo(int col)
-{
-    height[col]--;
-    board[col][height[col]] = 0;
-    moves--;
-}
+// // Removes the piece in the given column
+// // @param column: the column to remove from
+// void Position::undo(int col)
+// {
+//     // height[col]--;
+//     // board[col][height[col]] = 0;
+//     // moves--;
+// }
 
-// Prints the current state of the board
-void Position::printState()
-{
-    for (int j = HEIGHT - 1; j >= 0; j--)
-    {
-        for (int i = 0; i < WIDTH; i++)
+// // Prints the current state of the board
+// void Position::printState()
+// {
+//     for (int j = HEIGHT - 1; j >= 0; j--)
+//     {
+//         for (int i = 0; i < WIDTH; i++)
 
-        {
-            if (board[i][j] == 0)
-            {
-                std::cout << "- ";
-            }
-            else
-            {
-                std::cout << board[i][j] << " ";
-            }
-        }
-        std::cout << "\n";
-    }
-}
+//         {
+//             if (board[i][j] == 0)
+//             {
+//                 std::cout << "- ";
+//             }
+//             else
+//             {
+//                 std::cout << board[i][j] << " ";
+//             }
+//         }
+//         std::cout << "\n";
+//     }
+// }
 // Plays a particular sequence of moves
 // @param moves: the sequence of moves to play
 // @return: number of moves played.
@@ -87,6 +89,14 @@ unsigned int Position::play(const char *seq)
     }
     return i;
 }
+/**    
+       * @return a compact representation of a position on WIDTH*(HEIGHT+1) bits.
+       */
+uint64_t Position::key() const
+{
+    return current_position + mask;
+}
+
 // Checks whether a position is on the board or not
 // @param x: the x coordinate to check. 0-indexed
 // @param y: the y coordinate to check. 0-indexed
@@ -96,40 +106,35 @@ bool Position::valid_xy(int x, int y) const
     return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
 }
 
+bool Position::alignment(uint64_t pos) {
+        // horizontal 
+        uint64_t m = pos & (pos >> (HEIGHT+1));
+        if(m & (m >> (2*(HEIGHT+1)))) return true;
+
+        // diagonal 1
+        m = pos & (pos >> HEIGHT);
+        if(m & (m >> (2*HEIGHT))) return true;
+
+        // diagonal 2 
+        m = pos & (pos >> (HEIGHT+2));
+        if(m & (m >> (2*(HEIGHT+2)))) return true;
+
+        // vertical;
+        m = pos & (pos >> 1);
+        if(m & (m >> 2)) return true;
+
+        return false;
+      }
+
 // Returns whether the given move is a winning move or not
 // @param col: the column to check
 // @return: true if the move is a winning move, false otherwise
 bool Position::isWinningMove(int col) const
 {
 
-    int current_player = 1 + moves % 2;
-    int num_elements_in_col = height[col];
-
-    // See if we win vertically
-    if (num_elements_in_col >= 3 && board[col][num_elements_in_col - 1] == current_player && board[col][num_elements_in_col - 2] == current_player && board[col][num_elements_in_col - 3] == current_player)
-    {
-        return true;
-    }
-    // See if we win left diagonal: -1, horizontally: 0, right diagonal: 1
-    for (int axis = -1; axis <= 1; axis++)
-    {
-        
-        int pieces_in_favor_of_player = 0;
-        for (int direction = -1; direction <= 1; direction += 2)
-        {
-            // While we are in the bounds of the board and are seeing a piece of the current player
-            for (int x = col + direction, y = height[col] + (axis * direction); x >= 0 && valid_xy(x, y) && board[x][y] == current_player; pieces_in_favor_of_player++)
-            {
-                x += direction;
-                y += direction * axis;
-            }
-        }
-        if (pieces_in_favor_of_player >= 3)
-        {
-            return true;
-        }
-    }
-    return false;
+        uint64_t pos = current_position; 
+        pos |= (mask + bottom_mask(col)) & column_mask(col);
+        return alignment(pos);
 }
 
 // Returns number of moves played yet
@@ -137,6 +142,23 @@ bool Position::isWinningMove(int col) const
 unsigned int Position::nbMoves() const
 {
     return moves;
+}
+
+uint64_t Position::top_mask(int col)
+{
+    return (UINT64_C(1) << (HEIGHT - 1)) << col * (HEIGHT + 1);
+}
+
+// return a bitmask containg a single 1 corresponding to the bottom cell of a given column
+uint64_t Position::bottom_mask(int col)
+{
+    return UINT64_C(1) << col * (HEIGHT + 1);
+}
+
+// return a bitmask 1 on all the cells of a given column
+uint64_t Position::column_mask(int col)
+{
+    return ((UINT64_C(1) << HEIGHT) - 1) << col * (HEIGHT + 1);
 }
 // Destructor
 Position::~Position(){};

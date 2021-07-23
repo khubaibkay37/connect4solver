@@ -6,7 +6,7 @@
 // See the score of a given position
 // @param position: the position to evaluate
 
-Connect4Solver::Connect4Solver()
+Connect4Solver::Connect4Solver() : transTable(8388593)
 {
     for (int i = 0; i < Position::WIDTH; i++)
     {
@@ -42,10 +42,19 @@ void Connect4Solver::solve(const char *position)
     {
         if (pos.canPlay(i))
         {
+            int score;
             Position test(pos);
-            test.play(i);
-            // See value for us
-            int score = -negamax(pos);
+            if (test.isWinningMove(i))
+            {
+                score = (Position::WIDTH * Position::HEIGHT + 1 - test.nbMoves()) / 2;
+            }
+            else
+            {
+                test.play(i);
+                // See value for us
+                score = -negamax_with_pruning(test, -Position::WIDTH * Position::HEIGHT / 2, Position::WIDTH * Position::HEIGHT / 2);
+            }
+            // std::cout << "Move " << i+1 << ": " << score << std::endl;
             if (score > bestscore)
             {
                 bestscore = score;
@@ -58,6 +67,7 @@ void Connect4Solver::solve(const char *position)
 // ! DEPRECATED FUNCTION. THIS WILL NOT BE USED ANYMORE
 int Connect4Solver::negamax(const Position &P)
 {
+
     if (P.nbMoves() == Position::WIDTH * Position::HEIGHT) // check for draw game
         return 0;
 
@@ -102,6 +112,10 @@ int Connect4Solver::negamax_with_pruning(const Position &P, int alpha, int beta)
     }
     // We update beta value. [alpha,beta] is the range of values that the score could lie in.
     int max = (Position::WIDTH * Position::HEIGHT - 1 - P.nbMoves()) / 2;
+    if (int val = transTable.get(P.key()))
+    {
+        max = val + Position::MIN_SCORE - 1;
+    }
     if (beta > max)
     {
         beta = max;
@@ -138,6 +152,7 @@ int Connect4Solver::negamax_with_pruning(const Position &P, int alpha, int beta)
                 alpha = score;
             }
         }
-    } // We return the best score we have seen so far.
+    }                                                         // We return the best score we have seen so far.
+    transTable.put(P.key(), alpha - Position::MIN_SCORE + 1); // save the upper bound of the position
     return alpha;
 }
