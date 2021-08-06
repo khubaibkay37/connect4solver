@@ -36,34 +36,24 @@ void Connect4Solver::solve(const char *position)
 {
     Position pos;
     pos.play(position);
-    int bestmove = -1;
-    int bestscore = -1000;
-    for (int i = 0; i < 7; i++)
-    {
-        if (pos.canPlay(i))
-        {
-            int score;
-            Position test(pos);
-            if (test.isWinningMove(i))
-            {
-                score = (Position::WIDTH * Position::HEIGHT + 1 - test.nbMoves()) / 2;
-            }
-            else
-            {
-                test.play(i);
-                // See value for us
-                score = -negamax_with_pruning(test, -Position::WIDTH * Position::HEIGHT / 2, Position::WIDTH * Position::HEIGHT / 2);
-            }
-            // std::cout << "Move " << i+1 << ": " << score << std::endl;
-            if (score > bestscore)
-            {
-                bestscore = score;
-                bestmove = i;
-            }
-        }
+    int min = -(Position::WIDTH * Position::HEIGHT - pos.nbMoves()) / 2;
+    int max = (Position::WIDTH * Position::HEIGHT + 1 - pos.nbMoves()) / 2;
+    while (min < max)
+    { // iteratively narrow the min-max exploration window
+        int med = min + (max - min) / 2;
+        if (med <= 0 && min / 2 < med)
+            med = min / 2;
+        else if (med >= 0 && max / 2 > med)
+            med = max / 2;
+        int r = negamax_with_pruning(pos, med, med + 1); // use a null depth window to know if the actual score is greater or smaller than med
+        if (r <= med)
+            max = r;
+        else
+            min = r;
     }
-    std::cout << bestmove + 1 << std::endl;
+    std::cout << min << std::endl;
 }
+
 // ! DEPRECATED FUNCTION. THIS WILL NOT BE USED ANYMORE
 int Connect4Solver::negamax(const Position &P)
 {
