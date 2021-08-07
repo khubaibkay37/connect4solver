@@ -12,7 +12,7 @@ public:
 private:
     // int board[WIDTH][HEIGHT];
     // int height[WIDTH];
-    unsigned int moves;
+    int moves;
     uint64_t current_position;
     uint64_t mask;
     static bool alignment(uint64_t pos);
@@ -29,7 +29,7 @@ public:
     bool isWinningMove(int col) const;
     void undo(int col);
     uint64_t key() const;
-    unsigned int nbMoves() const;
+    int nbMoves() const;
     void printState();
     ~Position();
 };

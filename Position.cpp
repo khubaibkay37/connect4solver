@@ -139,7 +139,7 @@ bool Position::isWinningMove(int col) const
 
 // Returns number of moves played yet
 // @return: number of moves played
-unsigned int Position::nbMoves() const
+int Position::nbMoves() const
 {
     return moves;
 }

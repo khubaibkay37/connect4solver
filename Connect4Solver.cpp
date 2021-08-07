@@ -26,43 +26,72 @@ void Connect4Solver::get_value(const char *position)
 {
     Position pos;
     pos.play(position);
-    std::cout << negamax_with_pruning(pos, -Position::WIDTH * Position::HEIGHT / 2, Position::WIDTH * Position::HEIGHT / 2) << std::endl;
-    // std::cout << negamax(pos) << std::endl;
+    int min = -(Position::WIDTH * Position::HEIGHT - pos.nbMoves()) / 2;
+    int max = (Position::WIDTH * Position::HEIGHT + 1 - pos.nbMoves()) / 2;
+    while (min < max)
+    { // iteratively narrow the min-max exploration window
+        int med = min + (max - min) / 2;
+        if (med <= 0 && min / 2 < med)
+            med = min / 2;
+        else if (med >= 0 && max / 2 > med)
+            med = max / 2;
+        int r = negamax_with_pruning(pos, med, med + 1); // use a null depth window to know if the actual score is greater or smaller than med
+        if (r <= med)
+            max = r;
+        else
+            min = r;
+    }
+    std::cout << min << std::endl;
 }
 
 // Prints the best posible move for a given position
 // @param position: the position to evaluate
 void Connect4Solver::solve(const char *position)
 {
-    Position pos;
-    pos.play(position);
-    int bestmove = -1;
-    int bestscore = -1000;
-    for (int i = 0; i < 7; i++)
+    // position you currently are at
+    Position posMain;
+    posMain.play(position);
+    int bestpos = -1;
+    int bestscore = -20000;
+    for (int i = 0; i < Position::WIDTH; i++)
     {
-        if (pos.canPlay(i))
+        // Go column by column, you can even use heuristic
+        if (posMain.canPlay(i))
         {
-            int score;
-            Position test(pos);
-            if (test.isWinningMove(i))
+            int min = -(Position::WIDTH * Position::HEIGHT - posMain.nbMoves() - 1) / 2;
+            // if the column isn't a winning move, calculate manually
+            if (!posMain.isWinningMove(i))
             {
-                score = (Position::WIDTH * Position::HEIGHT + 1 - test.nbMoves()) / 2;
+                Position pos(posMain);
+                pos.play(i);
+                int max = (Position::WIDTH * Position::HEIGHT + 1 - pos.nbMoves()) / 2;
+                while (min < max)
+                { // iteratively narrow the min-max exploration window
+                    int med = min + (max - min) / 2;
+                    if (med <= 0 && min / 2 < med)
+                        med = min / 2;
+                    else if (med >= 0 && max / 2 > med)
+                        med = max / 2;
+                    int r = negamax_with_pruning(pos, med, med + 1); // use a null depth window to know if the actual score is greater or smaller than med
+                    if (r <= med)
+                        max = r;
+                    else
+                        min = r;
+                }
+                if (bestscore < -min)
+                {
+                    bestscore = -min;
+                    bestpos = i;
+                }
             }
             else
             {
-                test.play(i);
-                // See value for us
-                score = -negamax_with_pruning(test, -Position::WIDTH * Position::HEIGHT / 2, Position::WIDTH * Position::HEIGHT / 2);
-            }
-            // std::cout << "Move " << i+1 << ": " << score << std::endl;
-            if (score > bestscore)
-            {
-                bestscore = score;
-                bestmove = i;
+                bestscore = (Position::WIDTH * Position::HEIGHT + 1 - posMain.nbMoves() - 1) / 2;
+                bestpos = i;
             }
         }
     }
-    std::cout << bestmove + 1 << std::endl;
+    std::cout << bestpos + 1 << std::endl;
 }
 // ! DEPRECATED FUNCTION. THIS WILL NOT BE USED ANYMORE
 int Connect4Solver::negamax(const Position &P)
