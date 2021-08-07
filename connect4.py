@@ -115,6 +115,7 @@ while not game_over:
                             print(f"Column {i+1} : {score}")
 
                 best_move = get_best_move(current_actions)
+                print("best move is",best_move)
                 if is_winning_move(best_move-1,height,current_player,state):
                     score_of_best_move = "Doesn't matter you win"
                 else:
